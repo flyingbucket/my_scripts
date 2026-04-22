@@ -1,0 +1,48 @@
+#!/bin/bash
+
+REMOTE_HOST="${1:-A30}"
+
+TARGET_DIR="${2:-.}"
+
+# Socket path
+REMOTE_TMUX="/home/flyingbucket/miniconda3/bin/tmux"
+REMOTE_SOCK="/tmp/nvim.sock"
+LOCAL_SOCK="/tmp/nvim_local_${REMOTE_HOST}.sock"
+
+echo "Connecting to: $REMOTE_HOST"
+echo "Target directory: $TARGET_DIR"
+
+# --- clean up old tunnel and delete old Socket---
+[ -e "$LOCAL_SOCK" ] && pkill -f "$LOCAL_SOCK" && rm -f "$LOCAL_SOCK"
+
+# --- launch remote nvim headless backend ---
+# echo "Launching remote nvim headless backend"
+# ssh "$REMOTE_HOST" "$REMOTE_TMUX new-session -d -s nvim_server \"cd '$TARGET_DIR' && nvim --headless --listen $REMOTE_SOCK\""
+# sleep 1.5
+echo "Cleaning and launching remote nvim backend..."
+# ssh "$REMOTE_HOST" "$REMOTE_TMUX kill-session -t nvim_server 2>/dev/null; rm -f $REMOTE_SOCK; $REMOTE_TMUX new-session -d -s nvim_server \"cd '$TARGET_DIR' && nvim --headless --listen $REMOTE_SOCK\""
+ssh "$REMOTE_HOST" "/home/flyingbucket/miniconda3/bin/tmux kill-session -t nvim_server 2>/dev/null; rm -f $REMOTE_SOCK"
+ssh "$REMOTE_HOST" "bash -l -c \"/home/flyingbucket/miniconda3/bin/tmux new-session -d -s nvim_server 'cd $TARGET_DIR && nvim --headless --listen $REMOTE_SOCK'\""
+sleep 1
+
+# --- setup SSH tunnel ---
+echo "Setting up SSH tunnel..."
+ssh -L "$LOCAL_SOCK:$REMOTE_SOCK" -Nf "$REMOTE_HOST"
+
+# --- start local frontend ---
+if [ -S "$LOCAL_SOCK" ]; then
+  if command -v neovide &>/dev/null; then
+    echo "Launching Neovide..."
+    neovide --server "$LOCAL_SOCK"
+  else
+    echo "Launching Terminal UI..."
+    nvim --remote-ui --server "$LOCAL_SOCK"
+  fi
+else
+  echo "Error: Local socket $LOCAL_SOCK not found. Tunnel failed."
+fi
+
+# cleanup
+pkill -f "$LOCAL_SOCK"
+rm -f "$LOCAL_SOCK"
+echo "Tunnel closed."
