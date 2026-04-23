@@ -16,13 +16,9 @@ echo "Target directory: $TARGET_DIR"
 [ -e "$LOCAL_SOCK" ] && pkill -f "$LOCAL_SOCK" && rm -f "$LOCAL_SOCK"
 
 # --- launch remote nvim headless backend ---
-# echo "Launching remote nvim headless backend"
-# ssh "$REMOTE_HOST" "$REMOTE_TMUX new-session -d -s nvim_server \"cd '$TARGET_DIR' && nvim --headless --listen $REMOTE_SOCK\""
-# sleep 1.5
 echo "Cleaning and launching remote nvim backend..."
-# ssh "$REMOTE_HOST" "$REMOTE_TMUX kill-session -t nvim_server 2>/dev/null; rm -f $REMOTE_SOCK; $REMOTE_TMUX new-session -d -s nvim_server \"cd '$TARGET_DIR' && nvim --headless --listen $REMOTE_SOCK\""
 ssh "$REMOTE_HOST" "/home/flyingbucket/miniconda3/bin/tmux kill-session -t nvim_server 2>/dev/null; rm -f $REMOTE_SOCK"
-ssh "$REMOTE_HOST" "bash -l -c \"/home/flyingbucket/miniconda3/bin/tmux new-session -d -s nvim_server 'cd $TARGET_DIR && nvim --headless --listen $REMOTE_SOCK'\""
+ssh "$REMOTE_HOST" "bash -l -c \"tmux new-session -d -s nvim_server -c '$TARGET_DIR' 'nvim --headless --cmd \\\"let g:neovide=1\\\" --listen /tmp/nvim.sock'\""
 sleep 1
 
 # --- setup SSH tunnel ---
