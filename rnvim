@@ -16,10 +16,24 @@ echo "Target directory: $TARGET_DIR"
 [ -e "$LOCAL_SOCK" ] && pkill -f "$LOCAL_SOCK" && rm -f "$LOCAL_SOCK"
 
 # --- launch remote nvim headless backend ---
-echo "Cleaning and launching remote nvim backend..."
-ssh "$REMOTE_HOST" "/home/flyingbucket/miniconda3/bin/tmux kill-session -t nvim_server 2>/dev/null; rm -f $REMOTE_SOCK"
-ssh "$REMOTE_HOST" "bash -l -c \"tmux new-session -d -s nvim_server -c '$TARGET_DIR' 'nvim --headless --cmd \\\"let g:neovide=1\\\" --listen /tmp/nvim.sock'\""
-sleep 1
+echo "Checking remote nvim backend integrity..."
+CHECK_CMD="tmux has-session -t nvim_server 2>/dev/null && [ -S $REMOTE_SOCK ] && pgrep -u \$(id -u) -f 'nvim --headless.*$REMOTE_SOCK' > /dev/null"
+
+if ssh "$REMOTE_HOST" "$CHECK_CMD"; then
+  echo "Found healthy existing session. Reconnecting..."
+else
+  echo "Session unhealthy or non-existent. Re-initializing..."
+
+  ssh "$REMOTE_HOST" "
+        tmux kill-session -t nvim_server 2>/dev/null
+        rm -f $REMOTE_SOCK
+        pkill -u \$(id -u) -f 'nvim --headless.*$REMOTE_SOCK' 2>/dev/null
+    "
+
+  ssh "$REMOTE_HOST" "bash -l -c \"tmux new-session -d -s nvim_server -c '$TARGET_DIR' 'nvim --headless --cmd \\\"let g:neovide=1\\\" --listen $REMOTE_SOCK'\""
+
+  sleep 1.5
+fi
 
 # --- setup SSH tunnel ---
 echo "Setting up SSH tunnel..."
