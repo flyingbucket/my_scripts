@@ -21,6 +21,8 @@ cat <<EOF >.latexmkrc
 if (! -d \$out_dir) {
     mkdir \$out_dir;
 }
+
+$bibtex_use = 2;
 EOF
 
 echo "Standard .gitignore file and .latexmkrc file created."
