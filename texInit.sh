@@ -1,10 +1,10 @@
 #!/bin/bash
-
+# texInit.sh
 # Initialize git
 git init
 
 # Create .gitignore
-cat <<EOF >.gitignore
+cat <<'EOF' >.gitignore
 build/*
 !build/*.pdf
 *.aux
@@ -15,11 +15,11 @@ build/*
 EOF
 
 # Create .latexmkrc
-cat <<EOF >.latexmkrc
-\$out_dir = 'build';
+cat <<'EOF' >.latexmkrc
+$out_dir = 'build';
 
-if (! -d \$out_dir) {
-    mkdir \$out_dir;
+if (! -d $out_dir) {
+    mkdir $out_dir;
 }
 
 $bibtex_use = 2;
