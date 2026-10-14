@@ -41,13 +41,13 @@ ssh -L "$LOCAL_SOCK:$REMOTE_SOCK" -Nf "$REMOTE_HOST"
 
 # --- start local frontend ---
 if [ -S "$LOCAL_SOCK" ]; then
-  if command -v neovide &>/dev/null; then
-    echo "Launching Neovide..."
-    neovide --server "$LOCAL_SOCK"
-  else
-    echo "Launching Terminal UI..."
-    nvim --remote-ui --server "$LOCAL_SOCK"
-  fi
+  # if command -v neovide &>/dev/null; then
+  #   echo "Launching Neovide..."
+  #   neovide --server "$LOCAL_SOCK"
+  # else
+  echo "Launching Terminal UI..."
+  nvim --remote-ui --server "$LOCAL_SOCK"
+  # fi
 else
   echo "Error: Local socket $LOCAL_SOCK not found. Tunnel failed."
 fi
